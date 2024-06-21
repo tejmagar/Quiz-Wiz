@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz App</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    /* Custom styles can be added here */
+  </style>
+</head>
+
+<body class="bg-gray-100">
+  <div class="bg-orange-500 p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <h1 class="text-3xl font-bold text-blue-600">Quiz Wiz</h1>
+      <div class="flex space-x-4">
+        <div class="relative">
+          <select id="difficulty" name="difficulty"
+            class="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 pr-8 rounded shadow leading-tight focus:outline-none focus:border-gray-500 focus:ring">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 11.293a1 1 0 011.414 0l5 5a1 1 0 11-1.414 1.414l-5-5a1 1 0 010-1.414z" />
+            </svg>
+          </div>
+        </div>
+        <button id="checkBtn"
+          class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-orange-600 focus:outline-none">Check Answers</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mx-auto py-8">
+    <div id="quizContainer" class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+      <h2 id="quizTitle" class="text-2xl font-bold mb-4">Quiz Questions</h2>
+
+      <!-- Questions will be dynamically added here -->
+
+      <button id="submitBtn" type="button"
+        class="hidden bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 focus:outline-none">Submit</button>
+    </div>
+  </div>
+
+  <script>
+    // Define quiz questions in JSON format based on difficulty
+    const quizData = {{ quiz_ctx | safe }}
+
+    // Function to generate quiz based on selected difficulty
+    function generateQuiz(difficulty) {
+      const quizContainer = document.getElementById('quizContainer');
+      const questions = quizData[difficulty];
+
+      if (!questions) {
+        console.error(`No questions found for difficulty level: ${difficulty}`);
+        return;
+      }
+
+      // Clear previous quiz questions
+      quizContainer.innerHTML = '';
+
+      // Generate new quiz questions
+      questions.forEach((question, index) => {
+        const questionElement = document.createElement('div');
+        questionElement.classList.add('mb-4');
+        questionElement.innerHTML = `
+                    <p class="text-lg">${index + 1}. ${question.question}</p>
+                    <div class="mt-2">
+                        ${question.options.map(option => `
+                            <label class="inline-flex items-center">
+                                <input type="radio" class="form-radio text-orange-500" name="question${index + 1}" value="${option.id}">
+                                <span class="ml-2">${option.text}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+        quizContainer.appendChild(questionElement);
+      });
+
+      // Show submit button
+      document.getElementById('submitBtn').classList.remove('hidden');
+
+      // Update quiz title
+      document.getElementById('quizTitle').innerText = `Quiz Questions - ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
+    }
+
+    // Function to validate quiz before submission
+    function validateQuiz(numQuestions) {
+      let allValid = true;
+
+      for (let i = 0; i < numQuestions; i++) {
+        const selectedOption = document.querySelector(`input[name=question${i + 1}]:checked`);
+        if (!selectedOption) {
+          allValid = false;
+          alert(`Please answer question ${i + 1}`);
+          break;
+        }
+      }
+
+      if (allValid) {
+        alert('Form submitted successfully!');
+        // Optionally, you can submit the form here
+        // document.getElementById('quizForm').submit();
+      }
+    }
+
+    // Function to check answers
+    function checkAnswers() {
+      const questions = document.querySelectorAll('#quizContainer div.mb-4');
+      let correctAnswers = 0;
+
+      questions.forEach((question, index) => {
+        const selectedOption = question.querySelector(`input[name=question${index + 1}]:checked`);
+        if (selectedOption && selectedOption.value === quizData[document.getElementById('difficulty').value][index].correctAnswer) {
+          correctAnswers++;
+          question.classList.add('bg-green-100');
+        } else if (selectedOption) {
+          question.classList.add('bg-red-100');
+        }
+      });
+
+      alert(`You got ${correctAnswers} out of ${questions.length} questions correct.`);
+    }
+
+    // Event listener for difficulty dropdown change
+    document.getElementById('difficulty').addEventListener('change', function () {
+      const selectedDifficulty = this.value;
+      generateQuiz(selectedDifficulty);
+    });
+
+    // Event listener for check answers button
+    document.getElementById('checkBtn').addEventListener('click', function () {
+      checkAnswers();
+    });
+
+    // Initial quiz generation based on default difficulty
+    generateQuiz('easy');
+  </script>
+</body>
+
+</html>
