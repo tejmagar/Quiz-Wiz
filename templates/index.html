@@ -38,107 +38,103 @@
   <div class="container mx-auto py-8">
     <div id="quizContainer" class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
       <h2 id="quizTitle" class="text-2xl font-bold mb-4">Quiz Questions</h2>
-
-      <!-- Questions will be dynamically added here -->
-
-      <button id="submitBtn" type="button"
-        class="hidden bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 focus:outline-none">Submit</button>
+      <form id="quizForm">
+        <!-- Questions will be dynamically added here -->
+        <button id="submitBtn" type="button"
+          class="hidden bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 focus:outline-none">Submit</button>
+      </form>
     </div>
   </div>
 
   <script>
-    // Define quiz questions in JSON format based on difficulty
-    const quizData = {{ quiz_ctx | safe }}
+    document.addEventListener('DOMContentLoaded', function () {
+      const quizData = {{quiz_ctx | safe}};
 
-    // Function to generate quiz based on selected difficulty
-    function generateQuiz(difficulty) {
-      const quizContainer = document.getElementById('quizContainer');
-      const questions = quizData[difficulty];
+      function generateQuiz(difficulty) {
+        const quizContainer = document.getElementById('quizContainer');
+        const questions = quizData[difficulty];
 
-      if (!questions) {
-        console.error(`No questions found for difficulty level: ${difficulty}`);
-        return;
+        if (!questions) {
+          console.error(`No questions found for difficulty level: ${difficulty}`);
+          return;
+        }
+
+        // Clear previous quiz questions
+        const form = document.getElementById('quizForm');
+        form.innerHTML = '';
+
+        // Generate new quiz questions
+        questions.forEach((question, index) => {
+          const questionElement = document.createElement('div');
+          questionElement.classList.add('mb-4');
+          questionElement.innerHTML = `
+            <p class="text-lg">${index + 1}. ${question.question}</p>
+            <div class="mt-2">
+              ${question.options.map(option => `
+                <label class="inline-flex items-center">
+                  <input type="radio" class="form-radio text-orange-500" name="question${index + 1}" value="${option.id}">
+                  <span class="ml-2">${option.text}</span>
+                </label>
+              `).join('')}
+            </div>
+          `;
+          form.appendChild(questionElement);
+        });
+
+        // Show submit button
+        // document.getElementById('submitBtn').classList.remove('hidden');
+
+        // Update quiz title
+        document.getElementById('quizTitle').innerText = `Quiz Questions - ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
       }
 
-      // Clear previous quiz questions
-      quizContainer.innerHTML = '';
+      function validateQuiz(numQuestions) {
+        let allValid = true;
 
-      // Generate new quiz questions
-      questions.forEach((question, index) => {
-        const questionElement = document.createElement('div');
-        questionElement.classList.add('mb-4');
-        questionElement.innerHTML = `
-                    <p class="text-lg">${index + 1}. ${question.question}</p>
-                    <div class="mt-2">
-                        ${question.options.map(option => `
-                            <label class="inline-flex items-center">
-                                <input type="radio" class="form-radio text-orange-500" name="question${index + 1}" value="${option.id}">
-                                <span class="ml-2">${option.text}</span>
-                            </label>
-                        `).join('')}
-                    </div>
-                `;
-        quizContainer.appendChild(questionElement);
-      });
+        for (let i = 0; i < numQuestions; i++) {
+          const selectedOption = document.querySelector(`input[name=question${i + 1}]:checked`);
+          if (!selectedOption) {
+            allValid = false;
+            alert(`Please answer question ${i + 1}`);
+            break;
+          }
+        }
 
-      // Show submit button
-      document.getElementById('submitBtn').classList.remove('hidden');
-
-      // Update quiz title
-      document.getElementById('quizTitle').innerText = `Quiz Questions - ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`;
-    }
-
-    // Function to validate quiz before submission
-    function validateQuiz(numQuestions) {
-      let allValid = true;
-
-      for (let i = 0; i < numQuestions; i++) {
-        const selectedOption = document.querySelector(`input[name=question${i + 1}]:checked`);
-        if (!selectedOption) {
-          allValid = false;
-          alert(`Please answer question ${i + 1}`);
-          break;
+        if (allValid) {
+          alert('Form submitted successfully!');
         }
       }
 
-      if (allValid) {
-        alert('Form submitted successfully!');
-        // Optionally, you can submit the form here
-        // document.getElementById('quizForm').submit();
+      function checkAnswers() {
+        const questions = document.querySelectorAll('#quizForm div.mb-4');
+        let correctAnswers = 0;
+        const difficulty = document.getElementById('difficulty').value;
+
+        questions.forEach((question, index) => {
+          const selectedOption = question.querySelector(`input[name=question${index + 1}]:checked`);
+          if (selectedOption && selectedOption.value === quizData[difficulty][index].correctAnswer) {
+            correctAnswers++;
+            question.classList.add('bg-green-100');
+          } else if (selectedOption) {
+            question.classList.add('bg-red-100');
+          }
+        });
+
+        alert(`You got ${correctAnswers} out of ${questions.length} questions correct.`);
       }
-    }
 
-    // Function to check answers
-    function checkAnswers() {
-      const questions = document.querySelectorAll('#quizContainer div.mb-4');
-      let correctAnswers = 0;
-
-      questions.forEach((question, index) => {
-        const selectedOption = question.querySelector(`input[name=question${index + 1}]:checked`);
-        if (selectedOption && selectedOption.value === quizData[document.getElementById('difficulty').value][index].correctAnswer) {
-          correctAnswers++;
-          question.classList.add('bg-green-100');
-        } else if (selectedOption) {
-          question.classList.add('bg-red-100');
-        }
+      document.getElementById('difficulty').addEventListener('change', function () {
+        const selectedDifficulty = this.value;
+        console.log(selectedDifficulty);
+        generateQuiz(selectedDifficulty);
       });
 
-      alert(`You got ${correctAnswers} out of ${questions.length} questions correct.`);
-    }
-
-    // Event listener for difficulty dropdown change
-    document.getElementById('difficulty').addEventListener('change', function () {
-      const selectedDifficulty = this.value;
-      generateQuiz(selectedDifficulty);
-    });
-
-    // Event listener for check answers button
     document.getElementById('checkBtn').addEventListener('click', function () {
       checkAnswers();
     });
 
-    // Initial quiz generation based on default difficulty
     generateQuiz('easy');
+    });
   </script>
 </body>
 

@@ -9,7 +9,7 @@ from .models import Question
 
 def prepare_questions(questions):
     items = []
-    for question in Question.objects.filter(category='easy').all():
+    for question in questions:
         data = {
             'question': question.question,
             'options': [],
